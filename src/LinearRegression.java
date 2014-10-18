@@ -1,46 +1,89 @@
 public class LinearRegression {
-    private double[][] features;
-    private double[][] test;
-    private double[] output;
-    private double[] theta;
-    private double alpha = 0.0001;
-    private int max_steps = 10000;
-    private double minDeltaJ = 0.0003;
-    private int number_test_entry = 1500;
+    double[][] features;
+    double[][] test;
+    double[] output;
+    double[] theta;
+//    private double alpha = 0.0000000001;
+    double alpha = 0.0002;
+    int max_steps = 10000;
+    double minDeltaJ = 0.0003;
+    int number_test_entry = 1500;
     
-    public LinearRegression(String input, String config) throws Exception {
+    public LinearRegression(String input, String separator,String config) throws Exception {
+        Object[] obs = FileReader.read(config);
+        
+        // get value of alpha from config
+        String temp = obs[0].toString();
+        temp = temp.substring(0, temp.indexOf('#')).trim();
+        this.alpha = Double.parseDouble(temp);
+        
+        // get max steps
+        temp = obs[1].toString();
+        temp = temp.substring(0, temp.indexOf('#')).trim();
+        this.max_steps = Integer.parseInt(temp);
+        
+        // get min delta J from config
+        temp = obs[2].toString();
+        temp = temp.substring(0, temp.indexOf('#')).trim();
+        this.minDeltaJ = Double.parseDouble(temp);
+        System.out.println(this.alpha);
+        
+        // check if feature scaling enabled
+        temp = obs[3].toString();
+        temp = temp.substring(0, temp.indexOf('#')).trim();
+        boolean scaling_enabled = temp.contentEquals("1");
+        
+        // check selected features
+        temp = obs[4].toString();
+        temp = temp.substring(0, temp.indexOf('#')).trim();
+        String[] indeces = temp.split(" ");
+        int[] feature_index = new int[indeces.length];
+        double[] powers = new double[indeces.length];
+        for(int i=0; i < indeces.length; i++) {
+            String[] parts = indeces[i].split("\\^");
+            feature_index[i] = Integer.parseInt(parts[0]);
+            if (parts.length > 1) {
+                powers[i] = Double.parseDouble(parts[1]);
+            }   else {
+                powers[i] = 1.0;
+            }
+        }
+        
         Object[] values = FileReader.read(input);
         features = new double[values.length][];
         output = new double[values.length];
+        
         // initialize feature values
-        // todo do something with config
         for (int i=0; i < values.length; i++) {
             String v = values[i].toString();
-            String[] vals = v.split(";");
-            features[i] = new double[vals.length];
+            String[] vals = v.split(separator);
+            features[i] = new double[feature_index.length + 1];
             features[i][0] = 1.0;
+            // initialize theta to 0
             if (theta == null) {
-                theta = new double[vals.length];
-                for (int j=0; j < vals.length; j++) {
-                    theta[j] = 0;
-                }
+                theta = new double[feature_index.length + 1];                
             }
-            for (int j=0; j < vals.length - 1; j++) {
-                features[i][j + 1] = Double.parseDouble(vals[j]);
+            // initialize values of features according to the columns specified in the config
+            for (int j=0; j < feature_index.length; j++) {
+                features[i][j + 1] = Math.pow(Double.parseDouble(vals[feature_index[j] - 1]), powers[j]);
             }
             output[i] = Double.parseDouble(vals[vals.length - 1]);
         }
-        
-        double[][] scaled = normalizeAndScale(features);        
-        
+        if (scaling_enabled) {
+            this.features = normalizeAndScale(features);
+        }        
     }
     
+    
     public void gradientDescend() {
+        Graph g = new Graph();
+        g.graph();
+        
         int steps = 0;
         double prevJ = j(theta, features, output);
+        g.add(steps, prevJ);
         while (steps < max_steps) {
             steps++;
-            System.out.println(steps);
             double[] hMinusY = new double[features.length];
             for (int i=0; i < features.length; i++) {
                 hMinusY[i] = hOfx(theta, features[i]) - output[i];
@@ -59,8 +102,8 @@ public class LinearRegression {
                 System.out.println("End gd a j = " + newJ);
                 return;
             }
-            System.out.println(newJ);
             prevJ = newJ;
+            g.add(steps, newJ);
         }
         System.out.println("End after " + steps + " steps");
         System.out.println("with " + prevJ + " error");

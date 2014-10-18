@@ -14,8 +14,7 @@ import java.util.Scanner;
 public class FileReader {
     public static Object[] read(String filename) throws Exception {
         Scanner scan = new Scanner(new java.io.FileReader(filename));
-        ArrayList<String> res = new ArrayList<>();
-        scan.nextLine();
+        ArrayList<String> res = new ArrayList<>();          
         while(scan.hasNext()) {
             res.add(scan.nextLine());
         }
