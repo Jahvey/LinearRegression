@@ -48,6 +48,18 @@ public class RegressionUtil {
         return total;
     }
     
+    /* This function computes for a J(theta), which is the error. It accepts a 
+    theta vector and feature matrix.
+    */
+    public static double j(double[] theta, double[][] features, double[] output) {
+        double res = 0;
+        for (int i=0; i < features.length; i++) {
+            double hx = hOfx(theta, features[i]);
+            res += Math.pow(hx - output[i], 2);
+        }
+        return res / (2 * features.length);
+    }
+    
     // delete later
     public static void print(double[][] features) {
         for (int i=0; i < features.length; i++) {
